@@ -237,6 +237,7 @@ prettyDelayedOpenAcc detail ctx aenv (Manifest pacc) =
     Fold f Nothing  a               -> "fold1"          .$ [ ppF f,  ppA a ]
     FoldSeg _ f (Just z) a s        -> "foldSeg"        .$ [ ppF f,  ppE z, ppA a, ppA s ]
     FoldSeg _ f Nothing  a s        -> "fold1Seg"       .$ [ ppF f,  ppA a, ppA s ]
+    Multiply _ f g x a b            -> "Multiply"       .$ [ ppF f,  ppF g, ppE x, ppA a, ppA b]
     Scan d f (Just z) a             -> ppD "scan" d ""  .$ [ ppF f,  ppE z, ppA a ]
     Scan d f Nothing  a             -> ppD "scan" d "1" .$ [ ppF f,  ppA a ]
     Scan' d f z a                   -> ppD "scan" d "'" .$ [ ppF f,  ppE z, ppA a ]

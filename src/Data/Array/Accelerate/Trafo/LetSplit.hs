@@ -53,6 +53,7 @@ convertPreOpenAcc = \case
   ZipWith tp f a1 a2              -> ZipWith tp f (convertAcc a1) (convertAcc a2)
   Fold f e a                      -> Fold f e (convertAcc a)
   FoldSeg i f e a s               -> FoldSeg i f e (convertAcc a) (convertAcc s)
+  Multiply tp f g x a b           -> Multiply tp f g x (convertAcc a) (convertAcc b)
   Scan d f e a                    -> Scan d f e (convertAcc a)
   Scan' d f e a                   -> Scan' d f e (convertAcc a)
   Permute f a1 g a2               -> Permute f (convertAcc a1) g (convertAcc a2)

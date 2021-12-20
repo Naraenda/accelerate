@@ -257,6 +257,7 @@ evalOpenAcc (AST.Manifest pacc) aenv =
     Stencil s tp sten b acc       -> stencilOp s tp (evalF sten) (evalB b) (delayed acc)
     Stencil2 s1 s2 tp sten b1 a1 b2 a2
                                   -> stencil2Op s1 s2 tp (evalF sten) (evalB b1) (delayed a1) (evalB b2) (delayed a2)
+    Multiply tp f g x a b         -> multiplyOp tp (evalF f) (evalF g) (evalE x) (delayed a) (delayed b)
 
 
 -- Array primitives
@@ -423,6 +424,16 @@ fold1SegOp itp f (Delayed repr (sh, _) arr _) (Delayed _ ((), n) _ seg)
                    boundsCheck "empty segment" (end > start)
                    $ iter1 (ShapeRsnoc ShapeRz) ((), end-start) (\((), i) -> arr (sz, start+i)) f
 
+multiplyOp
+    :: HasCallStack
+    => TypeR c
+    -> (e1 -> e2 -> e3)
+    -> (e4 -> e3 -> e4)
+    -> e4
+    -> Delayed (Array sh e1)
+    -> Delayed (Array sh e2)
+    -> WithReprs (Array sh e4)
+multiplyOp tp f g e (Delayed repr1 sh1 arr1 _) (Delayed repr2 sh2 arr2 _) = undefined
 
 scanl1Op
     :: forall sh e. HasCallStack

@@ -53,6 +53,9 @@ module Data.Array.Accelerate.Language (
   -- * Reductions
   fold, fold1, foldSeg', fold1Seg',
 
+  -- * Multiplication
+  multiply, multiply',
+
   -- * Scan functions
   scanl, scanl', scanl1, scanr, scanr', scanr1,
 
@@ -843,6 +846,35 @@ backpermute
     -> Acc (Array sh  a)                -- ^ source array
     -> Acc (Array sh' a)
 backpermute = Acc $$$ applyAcc (Backpermute $ shapeR @sh')
+
+-- Multiplication
+-- --------------
+
+multiply 
+    :: forall sh a. (Shape sh, Elt a, IsNum a, a ~ EltR a, IsNum (Exp a))
+    => Acc (Array sh a)
+    -> Acc (Array sh a)
+    -> Acc (Array sh a)
+multiply = multiply' (*) (+) 0
+
+multiply'
+    :: forall sh a b c d. (Shape sh, Elt a, Elt b, Elt c, Elt d)
+    => (Exp a -> Exp b -> Exp c)
+    -> (Exp d -> Exp c -> Exp d)
+    -> Exp d
+    -> Acc (Array sh a)
+    -> Acc (Array sh b)
+    -> Acc (Array sh d)
+multiply' f g (Exp x) = Acc $$ applyAcc (
+    Multiply 
+      (eltR @a)
+      (eltR @b)
+      (eltR @c)
+      (eltR @d)
+      (unExpBinaryFunction f)
+      (unExpBinaryFunction g)
+      x
+    )
 
 -- Stencil operations
 -- ------------------

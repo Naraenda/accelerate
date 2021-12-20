@@ -353,6 +353,8 @@ convertSharingAcc config alyt aenv (ScopedAcc lams (AccSharing _ preAcc))
                                   -> AST.ZipWith t3 (cvtF2 t1 t2 f) (cvtA acc1) (cvtA acc2)
       Fold tp f e acc             -> AST.Fold (cvtF2 tp tp f) (cvtE <$> e) (cvtA acc)
       FoldSeg i tp f e acc1 acc2  -> AST.FoldSeg i (cvtF2 tp tp f) (cvtE <$> e) (cvtA acc1) (cvtA acc2)
+      Multiply t1 t2 t3 t4 f g x acc1 acc2 
+                                  -> AST.Multiply t4 (cvtF2 t1 t2 f) (cvtF2 t4 t3 g) (cvtE x) (cvtA acc1) (cvtA acc2)
       Scan  d tp f e acc          -> AST.Scan  d (cvtF2 tp tp f) (cvtE <$> e) (cvtA acc)
       Scan' d tp f e acc          -> AST.Scan' d (cvtF2 tp tp f) (cvtE e)     (cvtA acc)
       Permute (ArrayR shr tp) f dftAcc perm acc
@@ -1549,6 +1551,17 @@ makeOccMapSharingAcc config accOccMap = traverseAcc
                                              (acc2', h4) <- traverseAcc lvl acc2
                                              return (FoldSeg i tp f' e' acc1' acc2',
                                                      h1 `max` h2 `max` h3 `max` h4 + 1)
+
+            Multiply t1 t2 t3 t4 f g x acc1 acc2
+                                        -> do
+                                             (f'   , h1) <- traverseFun2 lvl t1 t2 f
+                                             (g'   , h2) <- traverseFun2 lvl t4 t3 g
+                                             (x'   , h3) <- traverseExp  lvl x
+                                             (acc1', h4) <- traverseAcc  lvl acc1
+                                             (acc2', h5) <- traverseAcc  lvl acc2
+                                             return (Multiply t1 t2 t3 t4 f' g' x' acc1' acc2',
+                                                     h1 `max` h2 `max` h3 `max` h4 `max` h5 + 1)
+
             Scan  d tp f e acc          -> travF2MEA (Scan  d tp) tp tp f e acc
             Scan' d tp f e acc          -> travF2EA (Scan' d tp) tp tp f e acc
             Permute repr@(ArrayR shr tp) c acc1 p acc2
@@ -2416,6 +2429,15 @@ determineScopesSharingAcc config accOccMap = scopesAcc
                                      in
                                      reconstruct (FoldSeg i tp f' z' acc1' acc2')
                                        (accCount1 +++ accCount2 +++ accCount3 +++ accCount4)
+          Multiply t1 t2 t3 t4 f g x acc1 acc2 -> let
+                                       (f'   , accCount1) = scopesFun2 f
+                                       (g'   , accCount2) = scopesFun2 g
+                                       (x'   , accCount3) = scopesExp  x
+                                       (acc1', accCount4) = scopesAcc  acc1
+                                       (acc2', accCount5) = scopesAcc  acc2
+                                     in
+                                     reconstruct (Multiply t1 t2 t3 t4 f' g' x' acc1' acc2') 
+                                       (accCount1 +++ accCount2 +++ accCount3 +++ accCount4 +++ accCount5)
           Scan d tp f z acc       -> travF2MEA (Scan d tp) f z acc
           Scan' d tp f z acc      -> travF2EA (Scan' d tp) f z acc
           Permute repr fc acc1 fp acc2

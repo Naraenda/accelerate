@@ -417,6 +417,17 @@ data PreSmartAcc acc exp as where
                 -> acc (Segments i)
                 -> PreSmartAcc acc exp (Array (sh, Int) e)
 
+  Multiply      :: TypeR e1
+                -> TypeR e2
+                -> TypeR e3
+                -> TypeR e4
+                -> (SmartExp e1 -> SmartExp e2 -> exp e3) -- zipping part
+                -> (SmartExp e4 -> SmartExp e3 -> exp e4) -- folding part
+                -> exp e4                                 -- Default value for folding
+                -> acc (Array sh e1)                      -- Array a
+                -> acc (Array sh e2)                      -- Array b
+                -> PreSmartAcc acc exp (Array sh e4)
+
   Scan          :: Direction
                 -> TypeR e
                 -> (SmartExp e -> SmartExp e -> exp e)
@@ -823,6 +834,8 @@ instance HasArraysR acc => HasArraysR (PreSmartAcc acc exp) where
     Fold _ _ _ a              -> let ArrayR (ShapeRsnoc shr) tp = arrayR a
                                  in  TupRsingle (ArrayR shr tp)
     FoldSeg _ _ _ _ a _       -> arraysR a
+    Multiply _ _ _ tp _ _ _ a _ -> let ArrayR shr _ = arrayR a
+                                   in TupRsingle $ ArrayR shr tp
     Scan _ _ _ _ a            -> arraysR a
     Scan' _ _ _ _ a           -> let repr@(ArrayR (ShapeRsnoc shr) tp) = arrayR a
                                  in  TupRsingle repr `TupRpair` TupRsingle (ArrayR shr tp)
@@ -1339,6 +1352,7 @@ formatPreAccOp = later $ \case
   Stencil{}           -> "Stencil"
   Stencil2{}          -> "Stencil2"
   Aforeign{}          -> "Aforeign"
+  Multiply{}          -> "Multiply"
 
 formatPreExpOp :: Format r (PreSmartExp acc exp t -> r)
 formatPreExpOp = later $ \case

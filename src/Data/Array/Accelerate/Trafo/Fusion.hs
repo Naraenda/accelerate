@@ -214,6 +214,8 @@ manifest config (OpenAcc pacc) =
     Stencil s t f x a       -> Stencil  s t f x (delayed config a)
     Stencil2 s1 s2 t f x a y b
                             -> Stencil2 s1 s2 t f x (delayed config a) y (delayed config b)
+    Multiply d f g x a b
+                            -> Multiply d f g x (delayed config a) (delayed config b)
     -- Collect s               -> Collect  (cvtS s)
 
     where
@@ -423,6 +425,7 @@ embedPreOpenAcc config matchAcc embedAcc elimAcc pacc
     Permute f d p a             -> embed2 aR (into2  permute            (cvtF f) (cvtF p)) d a
     Stencil s t f x a           -> embed  aR (into2  (stencil1 s t)     (cvtF f) (cvtB x)) a
     Stencil2 s1 s2 t f x a y b  -> embed2 aR (into3  (stencil2 s1 s2 t) (cvtF f) (cvtB x) (cvtB y)) a b
+    Multiply d f g x a b        -> embed2 aR (into3  (multiply d) (cvtF f) (cvtF g) (cvtE x)) a b
 
   where
     aR = arraysR pacc
@@ -449,7 +452,8 @@ embedPreOpenAcc config matchAcc embedAcc elimAcc pacc
 
     -- Helpers to shuffle the order of arguments to a constructor
     --
-    permute f p d a     = Permute f d p a
+    permute f p d a      = Permute f d p a
+    multiply d f g x a b = Multiply d f g x a b
 
     -- NOTE: [Stencil fusion]
     --
@@ -511,6 +515,15 @@ embedPreOpenAcc config matchAcc embedAcc elimAcc pacc
           -> Extend ArrayR OpenAcc env env'
           -> d
     into3 op a b c env = op (sinkA env a) (sinkA env b) (sinkA env c)
+
+    into3M :: (HasCallStack, Sink f1, Sink f2, Sink f3)
+           => (f1 env' a -> f2 env' b -> Maybe (f3 env' c) -> d)
+           -> f1 env a
+           -> f2 env b
+           -> Maybe (f3 env c)
+           -> Extend ArrayR acc env env'
+           -> d
+    into3M op a b c env = op (sinkA env a) (sinkA env b) (sinkA env <$> c)
 
     -- Operations which can be fused into consumers. Move all of the local
     -- bindings out of the way so that the fusible function operates
@@ -1562,6 +1575,7 @@ aletD' embedAcc elimAcc (LeftHandSideSingle ArrayR{}) (Embed env1 cc1) (Embed en
         Reshape shR sl a        -> Reshape shR (cvtE sl) (cvtA a)
         Fold f z a              -> Fold (cvtF f) (cvtE <$> z) (cvtA a)
         FoldSeg i f z a s       -> FoldSeg i (cvtF f) (cvtE <$> z) (cvtA a) (cvtA s)
+        Multiply d f g x a b    -> Multiply d (cvtF f) (cvtF g) (cvtE x) (cvtA a) (cvtA b)
         Scan  d f z a           -> Scan d (cvtF f) (cvtE <$> z) (cvtA a)
         Scan' d f z a           -> Scan' d (cvtF f) (cvtE z) (cvtA a)
         Permute f d p a         -> Permute (cvtF f) (cvtA d) (cvtF p) (cvtA a)

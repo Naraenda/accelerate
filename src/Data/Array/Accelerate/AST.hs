@@ -381,6 +381,16 @@ data PreOpenAcc (acc :: Type -> Type -> Type) aenv a where
               -> acc            aenv (Segments i)               -- segment descriptor
               -> PreOpenAcc acc aenv (Array (sh, Int) e)
 
+
+  Multiply    :: TypeR e4
+              -> Fun            aenv (e1 -> e2 -> e3) -- zipping part
+              -> Fun            aenv (e4 -> e3 -> e4) -- folding part
+              -> Exp            aenv e4               -- Default value for folding
+              -> acc            aenv (Array sh e1)    -- Array a
+              -> acc            aenv (Array sh e2)    -- Array b
+              -> PreOpenAcc acc aenv (Array sh e4)
+
+
   -- Haskell-style scan of a linear array with a given
   -- /associative/ function and optionally an initial element
   -- (which does not need to be the neutral of the associative operations)
@@ -794,6 +804,8 @@ instance HasArraysR acc => HasArraysR (PreOpenAcc acc) where
   arraysR (Fold _ _ a)                = let ArrayR (ShapeRsnoc sh) tR = arrayR a
                                          in arraysRarray sh tR
   arraysR (FoldSeg _ _ _ a _)         = arraysR a
+  arraysR (Multiply tp _ _ _ a _)     = let ArrayR shr _ = arrayR a
+                                         in TupRsingle $ ArrayR shr tp
   arraysR (Scan _ _ _ a)              = arraysR a
   arraysR (Scan' _ _ _ a)             = let aR@(ArrayR (ShapeRsnoc sh) tR) = arrayR a
                                          in TupRsingle aR `TupRpair` TupRsingle (ArrayR sh tR)
@@ -1011,6 +1023,7 @@ rnfPreOpenAcc rnfA pacc =
     ZipWith tp f a1 a2        -> rnfTypeR tp `seq` rnfF f `seq` rnfA a1 `seq` rnfA a2
     Fold f z a                -> rnfF f `seq` rnfMaybe rnfE z `seq` rnfA a
     FoldSeg i f z a s         -> rnfIntegralType i `seq` rnfF f `seq` rnfMaybe rnfE z `seq` rnfA a `seq` rnfA s
+    Multiply tp f g x a b     -> rnfTypeR tp `seq` rnfF f `seq` rnfF g `seq` rnfE x `seq` rnfA a `seq` rnfA b
     Scan d f z a              -> d `seq` rnfF f `seq` rnfMaybe rnfE z `seq` rnfA a
     Scan' d f z a             -> d `seq` rnfF f `seq` rnfE z `seq` rnfA a
     Permute f d p a           -> rnfF f `seq` rnfA d `seq` rnfF p `seq` rnfA a
@@ -1219,6 +1232,7 @@ liftPreOpenAcc liftA pacc =
     ZipWith tp f a b          -> [|| ZipWith $$(liftTypeR tp) $$(liftF f) $$(liftA a) $$(liftA b) ||]
     Fold f z a                -> [|| Fold $$(liftF f) $$(liftMaybe liftE z) $$(liftA a) ||]
     FoldSeg i f z a s         -> [|| FoldSeg $$(liftIntegralType i) $$(liftF f) $$(liftMaybe liftE z) $$(liftA a) $$(liftA s) ||]
+    Multiply d f g x a b      -> [|| Multiply $$(liftTypeR d) $$(liftF f) $$(liftF g)  $$(liftE x) $$(liftA a) $$(liftA b) ||]
     Scan d f z a              -> [|| Scan  $$(liftDirection d) $$(liftF f) $$(liftMaybe liftE z) $$(liftA a) ||]
     Scan' d f z a             -> [|| Scan' $$(liftDirection d) $$(liftF f) $$(liftE z) $$(liftA a) ||]
     Permute f d p a           -> [|| Permute $$(liftF f) $$(liftA d) $$(liftF p) $$(liftA a) ||]
@@ -1428,6 +1442,7 @@ formatPreAccOp = later $ \case
   Backpermute{}     -> "Backpermute"
   Stencil{}         -> "Stencil"
   Stencil2{}        -> "Stencil2"
+  Multiply{}        -> "Multiply"
 
 formatExpOp :: Format r (OpenExp aenv env t -> r)
 formatExpOp = later $ \case

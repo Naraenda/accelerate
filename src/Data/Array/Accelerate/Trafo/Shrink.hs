@@ -563,6 +563,7 @@ usesOfPreAcc withShape countAcc idx = count
       ZipWith _ f a1 a2          -> countF f  + countA a1 + countA a2
       Fold f z a                 -> countF f  + countME z + countA a
       FoldSeg _ f z a s          -> countF f  + countME z + countA a  + countA s
+      Multiply _ f g x a b       -> countF f  + countF g  + countE x  + countA a + countA b
       Scan  _ f z a              -> countF f  + countME z + countA a
       Scan' _ f z a              -> countF f  + countE z  + countA a
       Permute f1 a1 f2 a2        -> countF f1 + countA a1 + countF f2 + countA a2

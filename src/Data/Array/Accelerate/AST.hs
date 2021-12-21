@@ -386,9 +386,9 @@ data PreOpenAcc (acc :: Type -> Type -> Type) aenv a where
               -> Fun            aenv (e1 -> e2 -> e3) -- zipping part
               -> Fun            aenv (e4 -> e3 -> e4) -- folding part
               -> Exp            aenv e4               -- Default value for folding
-              -> acc            aenv (Array sh e1)    -- Array a
-              -> acc            aenv (Array sh e2)    -- Array b
-              -> PreOpenAcc acc aenv (Array sh e4)
+              -> acc            aenv (Array DIM2 e1)    -- Array a
+              -> acc            aenv (Array DIM2 e2)    -- Array b
+              -> PreOpenAcc acc aenv (Array DIM2 e4)
 
 
   -- Haskell-style scan of a linear array with a given

@@ -424,9 +424,9 @@ data PreSmartAcc acc exp as where
                 -> (SmartExp e1 -> SmartExp e2 -> exp e3) -- zipping part
                 -> (SmartExp e4 -> SmartExp e3 -> exp e4) -- folding part
                 -> exp e4                                 -- Default value for folding
-                -> acc (Array sh e1)                      -- Array a
-                -> acc (Array sh e2)                      -- Array b
-                -> PreSmartAcc acc exp (Array sh e4)
+                -> acc (Array DIM2 e1)                      -- Array a
+                -> acc (Array DIM2 e2)                      -- Array b
+                -> PreSmartAcc acc exp (Array DIM2 e4)
 
   Scan          :: Direction
                 -> TypeR e

@@ -430,9 +430,9 @@ multiplyOp
     -> (e1 -> e2 -> e3)
     -> (e4 -> e3 -> e4)
     -> e4
-    -> Delayed (Array sh e1)
-    -> Delayed (Array sh e2)
-    -> WithReprs (Array sh e4)
+    -> Delayed (Array DIM2 e1)
+    -> Delayed (Array DIM2 e2)
+    -> WithReprs (Array DIM2 e4)
 multiplyOp tp f g e (Delayed repr1 sh1 arr1 _) (Delayed repr2 sh2 arr2 _) = undefined
 
 scanl1Op

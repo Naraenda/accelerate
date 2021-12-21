@@ -111,7 +111,7 @@ import Data.Array.Accelerate.Smart                                  hiding ( arr
 import Data.Array.Accelerate.Sugar.Array                            ( Arrays(..), Array, Scalar, Segments, arrayR )
 import Data.Array.Accelerate.Sugar.Elt
 import Data.Array.Accelerate.Sugar.Foreign
-import Data.Array.Accelerate.Sugar.Shape                            ( Shape(..), Slice(..), (:.) )
+import Data.Array.Accelerate.Sugar.Shape                            ( Shape(..), Slice(..), (:.), DIM2 )
 import Data.Array.Accelerate.Type
 import qualified Data.Array.Accelerate.Representation.Array         as R
 
@@ -851,20 +851,20 @@ backpermute = Acc $$$ applyAcc (Backpermute $ shapeR @sh')
 -- --------------
 
 multiply 
-    :: forall sh a. (Shape sh, Elt a, IsNum a, a ~ EltR a, IsNum (Exp a))
-    => Acc (Array sh a)
-    -> Acc (Array sh a)
-    -> Acc (Array sh a)
+    :: forall a. (Elt a, IsNum a, a ~ EltR a, IsNum (Exp a))
+    => Acc (Array DIM2 a)
+    -> Acc (Array DIM2 a)
+    -> Acc (Array DIM2 a)
 multiply = multiply' (*) (+) 0
 
 multiply'
-    :: forall sh a b c d. (Shape sh, Elt a, Elt b, Elt c, Elt d)
+    :: forall a b c d. (Elt a, Elt b, Elt c, Elt d)
     => (Exp a -> Exp b -> Exp c)
     -> (Exp d -> Exp c -> Exp d)
     -> Exp d
-    -> Acc (Array sh a)
-    -> Acc (Array sh b)
-    -> Acc (Array sh d)
+    -> Acc (Array DIM2 a)
+    -> Acc (Array DIM2 b)
+    -> Acc (Array DIM2 d)
 multiply' f g (Exp x) = Acc $$ applyAcc (
     Multiply 
       (eltR @a)
